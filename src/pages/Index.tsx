@@ -11,6 +11,48 @@ import Icon from '@/components/ui/icon';
 const Index = () => {
   const [selectedCreature, setSelectedCreature] = useState<number | null>(null);
   const [selectedStory, setSelectedStory] = useState<number | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [selectedBiome, setSelectedBiome] = useState<string | null>(null);
+  const [storyteller, setStoryteller] = useState<number | null>(null);
+  
+  const [resources, setResources] = useState({ food: 100, wood: 50, metal: 30, energy: 100 });
+  const [colonists, setColonists] = useState([
+    { id: 1, name: 'Алекс', skill: 'Инженер', health: 100, mood: 80 },
+    { id: 2, name: 'Мария', skill: 'Медик', health: 100, mood: 85 },
+    { id: 3, name: 'Виктор', skill: 'Охотник', health: 100, mood: 75 }
+  ]);
+  const [day, setDay] = useState(1);
+  const [events, setEvents] = useState<string[]>([]);
+
+  const startGame = () => {
+    if (selectedBiome && storyteller) {
+      setGameStarted(true);
+      setEvents([`День 1: Добро пожаловать в биом "${selectedBiome}"! Ваша колония начинает свой путь.`]);
+    }
+  };
+
+  const nextDay = () => {
+    const newDay = day + 1;
+    setDay(newDay);
+    
+    setResources(prev => ({
+      food: Math.max(0, prev.food - 10 + Math.floor(Math.random() * 15)),
+      wood: Math.max(0, prev.wood - 5 + Math.floor(Math.random() * 10)),
+      metal: prev.metal + Math.floor(Math.random() * 5),
+      energy: Math.min(100, prev.energy - 15 + Math.floor(Math.random() * 20))
+    }));
+
+    const randomEvents = [
+      'Обнаружен новый источник ресурсов поблизости',
+      'Колонисты успешно охотились, добыто +15 еды',
+      'Внимание! Приближается буря',
+      'Дружественный караван предлагает обмен',
+      'Один из колонистов заболел, требуется медицинская помощь'
+    ];
+    
+    const newEvent = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+    setEvents(prev => [...prev, `День ${newDay}: ${newEvent}`].slice(-5));
+  };
 
   const creatures = [
     {
@@ -172,6 +214,155 @@ const Index = () => {
     }
   ];
 
+  if (gameStarted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-slate-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+              Колония Эден — День {day}
+            </h1>
+            <Button variant="outline" onClick={() => setGameStarted(false)}>
+              <Icon name="ArrowLeft" className="mr-2" size={18} />
+              В меню
+            </Button>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <Card className="border-primary/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="Package" className="text-primary" />
+                    Ресурсы Колонии
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Icon name="Apple" className="text-green-400" size={20} />
+                        <span className="text-sm">Еда</span>
+                      </div>
+                      <Progress value={resources.food} className="h-3" />
+                      <p className="text-xs text-muted-foreground">{resources.food}/100</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Icon name="Trees" className="text-amber-600" size={20} />
+                        <span className="text-sm">Древесина</span>
+                      </div>
+                      <Progress value={resources.wood * 2} className="h-3" />
+                      <p className="text-xs text-muted-foreground">{resources.wood}/50</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Icon name="Anvil" className="text-slate-400" size={20} />
+                        <span className="text-sm">Металл</span>
+                      </div>
+                      <Progress value={resources.metal * 3.33} className="h-3" />
+                      <p className="text-xs text-muted-foreground">{resources.metal}/30</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Icon name="Zap" className="text-yellow-400" size={20} />
+                        <span className="text-sm">Энергия</span>
+                      </div>
+                      <Progress value={resources.energy} className="h-3" />
+                      <p className="text-xs text-muted-foreground">{resources.energy}/100</p>
+                    </div>
+                  </div>
+                  <Separator className="my-4" />
+                  <Button onClick={nextDay} className="w-full" size="lg">
+                    <Icon name="FastForward" className="mr-2" />
+                    Следующий день
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-secondary/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="Users" className="text-secondary" />
+                    Колонисты
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {colonists.map((colonist) => (
+                      <Card key={colonist.id} className="bg-card/50">
+                        <CardContent className="pt-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="font-semibold">{colonist.name}</p>
+                              <Badge variant="outline" className="text-xs mt-1">{colonist.skill}</Badge>
+                            </div>
+                            <Icon name="User" className="text-muted-foreground" size={32} />
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Icon name="Heart" size={16} className="text-red-400" />
+                              <Progress value={colonist.health} className="h-2 flex-1" />
+                              <span className="text-xs text-muted-foreground">{colonist.health}%</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Icon name="Smile" size={16} className="text-yellow-400" />
+                              <Progress value={colonist.mood} className="h-2 flex-1" />
+                              <span className="text-xs text-muted-foreground">{colonist.mood}%</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              <Card className="border-accent/30">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Icon name="Scroll" className="text-accent" />
+                    Журнал Событий
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-3">
+                      {events.map((event, index) => (
+                        <div key={index} className="p-3 bg-card/50 rounded-lg border border-border">
+                          <p className="text-sm">{event}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Icon name="Map" className="text-primary" />
+                    Локация
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-2">Биом:</p>
+                  <Badge variant="secondary" className="mb-3">{selectedBiome}</Badge>
+                  <p className="text-sm text-muted-foreground mb-2">Рассказчик:</p>
+                  <Badge variant="outline">
+                    {storytellers.find(s => s.id === storyteller)?.name}
+                  </Badge>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-slate-900">
       <div className="container mx-auto px-4 py-8">
@@ -219,7 +410,13 @@ const Index = () => {
               <CardContent>
                 <div className="grid md:grid-cols-2 gap-4">
                   {biomes.map((biome, index) => (
-                    <Card key={index} className="bg-card/50 hover:bg-card/80 transition-all hover:scale-105">
+                    <Card 
+                      key={index} 
+                      className={`cursor-pointer transition-all hover:scale-105 ${
+                        selectedBiome === biome.name ? 'ring-2 ring-primary bg-card' : 'bg-card/50 hover:bg-card/80'
+                      }`}
+                      onClick={() => setSelectedBiome(biome.name)}
+                    >
                       <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-xl">
                           <Icon name={biome.icon as any} className="text-primary" size={24} />
@@ -246,6 +443,12 @@ const Index = () => {
                           <Icon name="AlertTriangle" className="text-accent mt-0.5" size={16} />
                           <p className="text-sm text-accent">{biome.dangers}</p>
                         </div>
+                        {selectedBiome === biome.name && (
+                          <Button className="w-full mt-2" size="sm">
+                            <Icon name="Check" className="mr-2" size={16} />
+                            Выбран
+                          </Button>
+                        )}
                       </CardContent>
                     </Card>
                   ))}
@@ -534,9 +737,19 @@ const Index = () => {
                         </p>
                       </div>
                     </div>
-                    <Button className="w-full" variant="outline">
+                    <Button 
+                      className="w-full" 
+                      variant="outline"
+                      onClick={() => {
+                        setStoryteller(selectedStory);
+                        if (selectedBiome) {
+                          startGame();
+                        }
+                      }}
+                      disabled={!selectedBiome}
+                    >
                       <Icon name="Play" className="mr-2" size={18} />
-                      Начать Игру
+                      {selectedBiome ? 'Начать Игру' : 'Выберите биом во вкладке "МИР"'}
                     </Button>
                   </div>
                   <div className="grid grid-cols-3 gap-3 text-center">
